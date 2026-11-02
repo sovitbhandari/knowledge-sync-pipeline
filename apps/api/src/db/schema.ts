@@ -58,10 +58,16 @@ export const dataSources = pgTable(
     adapterType: varchar("adapter_type", { length: 32 }).notNull(),
     config: jsonb("config").notNull().default({}),
     isActive: boolean("is_active").notNull().default(true),
+    leaseOwner: varchar("lease_owner", { length: 128 }),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    activeSyncRunId: uuid("active_sync_run_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [uniqueIndex("data_sources_key_uidx").on(table.key)],
+  (table) => [
+    uniqueIndex("data_sources_key_uidx").on(table.key),
+    index("data_sources_lease_expires_idx").on(table.leaseExpiresAt),
+  ],
 );
 
 export const locations = pgTable(

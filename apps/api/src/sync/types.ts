@@ -12,6 +12,8 @@ export type SyncRunResult = SyncCounts & {
   sourceId: string;
   status: "completed" | "failed";
   failureReason: string | null;
+  failureCategory: string | null;
+  retryCount: number;
   durationMs: number;
   recordsPerSecond: number | null;
 };

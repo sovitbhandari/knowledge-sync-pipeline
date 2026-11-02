@@ -12,7 +12,7 @@ enterprise integration problems for portfolio demonstration.
 | --- | --- |
 | Repository foundation (Phase 1) | Complete |
 | ETL adapters / normalization (Phase 2) | Complete |
-| Retries, leases, checkpoints (Phase 3) | Not started |
+| Retries, leases, checkpoints (Phase 3) | Complete |
 | Management API + React dashboard (Phase 4) | Not started |
 | Full verification / benchmarks (Phase 5) | Not started |
 
@@ -26,16 +26,25 @@ enterprise integration problems for portfolio demonstration.
 - Mock REST + CSV adapters sharing the same validation pipeline
 - Idempotent location upserts with content hashes and rejection audit rows
 - Sync runner with per-page transactions and checkpoint/event records
+- Bounded retries with jitter, HTTP 429 `Retry-After` support
+- Database-backed source leases with expired-lease recovery
+- Checkpoint resume after interruption; terminal failed-job states
 
 ### Verified (executed locally)
 
 - Phase 1 health/migrate/typecheck/lint checks
 - `@ksp/shared` normalize unit tests (3)
-- API tests (9): health, config, and sync integration cases:
+- API tests (18): health, config, retry unit tests, and sync/reliability integration:
   1. first import inserts all valid records
   2. repeated import creates no duplicates
   3. changed source record updates only that canonical row
   4. malformed records rejected with auditable reason
+  5. API timeout triggers bounded retry behavior
+  6. HTTP 429 respects valid Retry-After
+  7. interruption after committed page resumes without skipping
+  8. concurrent attempts cannot run the same source sync
+  9. expired lease can be recovered
+  10. permanent failure reaches terminal state without infinite retry
   11. CSV and REST produce equivalent content hashes
 
 ### Experimental / not claimed
@@ -45,7 +54,6 @@ enterprise integration problems for portfolio demonstration.
 
 ### Known limitations
 
-- No bounded retry/429 handling, leases, or resumable interruption recovery yet (Phase 3)
 - No public management API or React dashboard yet (Phase 4)
 - No automated retention purger
 - If host port 5432 is occupied, set `POSTGRES_PORT` / `DATABASE_URL` (this machine uses `5433` in `.env`)
@@ -89,3 +97,4 @@ docs/             Architecture and data-flow notes
 
 - [Architecture](docs/architecture.md)
 - [Data flow](docs/data-flow.md)
+- [Failure and recovery](docs/failure-recovery.md)

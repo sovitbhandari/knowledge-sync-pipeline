@@ -6,6 +6,11 @@ export type MockSourceConfig = {
   totalRecords: number;
   defaultPageSize: number;
   faultMode: SourceFaultMode;
+  /**
+   * How many times to apply faultMode before returning to healthy responses.
+   * null means fault forever while faultMode != none.
+   */
+  faultRemaining: number | null;
   /** Artificial delay in ms before responding (for timeout tests). */
   delayMs: number;
   rateLimitRetryAfterSeconds: number;
@@ -15,6 +20,7 @@ const DEFAULT_CONFIG: MockSourceConfig = {
   totalRecords: 25,
   defaultPageSize: 10,
   faultMode: "none",
+  faultRemaining: null,
   delayMs: 0,
   rateLimitRetryAfterSeconds: 1,
 };
@@ -66,8 +72,25 @@ export class MockLocationStore {
       ...this.config,
       totalRecords,
       faultMode: "none",
+      faultRemaining: null,
       delayMs: 0,
     };
+  }
+
+  /**
+   * Consume one fault application if configured.
+   * Returns the fault to apply for this request, or "none".
+   */
+  consumeFault(): SourceFaultMode {
+    if (this.config.faultMode === "none") return "none";
+    if (this.config.faultRemaining == null) return this.config.faultMode;
+    if (this.config.faultRemaining <= 0) return "none";
+    this.config.faultRemaining -= 1;
+    const mode = this.config.faultMode;
+    if (this.config.faultRemaining <= 0) {
+      this.config.faultMode = "none";
+    }
+    return mode;
   }
 
   getAll(): RawLocation[] {

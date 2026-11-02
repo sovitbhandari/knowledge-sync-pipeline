@@ -25,24 +25,23 @@ export const mockSourcePlugin: FastifyPluginAsync<MockSourcePluginOpts> = async 
   app.get("/locations", async (request, reply) => {
     const query = querySchema.parse(request.query);
     const config = store.getConfig();
+    const fault = store.consumeFault();
 
-    if (config.delayMs > 0) {
-      await sleep(config.delayMs);
-    }
-
-    if (config.faultMode === "timeout") {
+    if (fault === "timeout") {
       // Simulate a hung upstream: delay longer than typical client timeout budgets in tests.
+      // Do not apply this delay to healthy responses.
       await sleep(config.delayMs > 0 ? config.delayMs : 5_000);
+      return reply.status(504).send({ error: "gateway_timeout", message: "Simulated upstream timeout" });
     }
 
-    if (config.faultMode === "rate_limit") {
+    if (fault === "rate_limit") {
       return reply
         .status(429)
         .header("Retry-After", String(config.rateLimitRetryAfterSeconds))
         .send({ error: "rate_limited", message: "Too many requests" });
     }
 
-    if (config.faultMode === "malformed_json") {
+    if (fault === "malformed_json") {
       reply.header("content-type", "application/json");
       return reply.status(200).send("{ not-valid-json");
     }

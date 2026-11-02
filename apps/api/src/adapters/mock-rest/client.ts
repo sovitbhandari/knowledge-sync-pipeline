@@ -68,7 +68,7 @@ export class MockRestAdapter implements SourceAdapter {
         signal: controller.signal,
       });
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
+      if (isAbortError(error)) {
         throw new SourceTimeoutError(`Mock REST request timed out after ${this.timeoutMs}ms`);
       }
       throw error;
@@ -146,4 +146,11 @@ function parseRetryAfter(header: string | null): number | null {
     return seconds > 0 ? seconds : 0;
   }
   return null;
+}
+
+function isAbortError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const err = error as { name?: string; message?: string };
+  if (err.name === "AbortError") return true;
+  return typeof err.message === "string" && /aborted/i.test(err.message);
 }
