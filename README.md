@@ -6,15 +6,24 @@ transforms and validates them, and synchronizes them into a canonical PostgreSQL
 **Not affiliated with Yext or any commercial listing platform.** Inspired by common
 enterprise integration problems for portfolio demonstration.
 
+## Dashboard
+
+Admin console for sync overview, source runs, history, failed-record inspection, and
+location search.
+
+![Dashboard overview with sync controls and history](docs/images/dashboard-overview.png)
+
+![Locations table with search and filters](docs/images/dashboard-locations.png)
+
 ## Status
 
 | Area | Status |
 | --- | --- |
-| Repository foundation (Phase 1) | Complete |
-| ETL adapters / normalization (Phase 2) | Complete |
-| Retries, leases, checkpoints (Phase 3) | Complete |
-| Management API + React dashboard (Phase 4) | Complete |
-| Full verification / benchmarks (Phase 5) | Complete |
+| Repository foundation | Complete |
+| ETL adapters / normalization | Complete |
+| Retries, leases, checkpoints | Complete |
+| Management API + React dashboard | Complete |
+| Verification / benchmarks / CI | Complete |
 
 ### Implemented features
 
@@ -28,9 +37,7 @@ enterprise integration problems for portfolio demonstration.
 
 ### Verified behaviors
 
-Executed locally on this machine:
-
-- `npm run typecheck`, `npm run lint`, `npm run test` (22 automated tests)
+- `npm run typecheck`, `npm run lint`, `npm run test`
 - `npm run test:e2e -w @ksp/web` (dashboard shows persisted sync results)
 - Required cases 1–11 covered
 - Migrations apply against Docker Compose Postgres 16
@@ -52,7 +59,7 @@ These numbers are not production performance or scalability claims.
 - Management API/dashboard have no authentication
 - Retention purge jobs are documented but not automated
 - Optional commercial listing destination adapters are intentionally absent
-- If host port 5432 is busy, set `POSTGRES_PORT` / `DATABASE_URL` (local `.env` uses `5433`)
+- If host port 5432 is busy, set `POSTGRES_PORT` / `DATABASE_URL` (local `.env` may use `5433`)
 
 ## Quick start
 
@@ -88,3 +95,7 @@ npm run bench -- 1000,10000,50000 200
 - [API](docs/api.md)
 - [Security notes](docs/security.md)
 - [Benchmarks](docs/benchmarks.md)
+
+## Contributor
+
+**Sovit Bhandari**

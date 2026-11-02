@@ -26,7 +26,11 @@ function QueryState(props: {
   children: ReactNode;
 }) {
   if (props.isLoading) {
-    return <p className="muted" role="status">Loading…</p>;
+    return (
+      <p className="loading-line" role="status">
+        Loading…
+      </p>
+    );
   }
   if (props.isError) {
     return (
@@ -111,16 +115,20 @@ export function App() {
     <div className="app-shell">
       <header className="topbar">
         <div>
+          <p className="brand-kicker">Admin console</p>
           <h1>Knowledge Sync Pipeline</h1>
           <p>
-            Administration console for business-location ingestion. Sync results are read from the
-            live PostgreSQL-backed API.
+            Monitor ingestion health, trigger source syncs, and inspect canonical business
+            locations backed by PostgreSQL.
           </p>
         </div>
       </header>
 
       <section className="panel" aria-labelledby="overview-heading">
-        <h2 id="overview-heading">Sync overview</h2>
+        <div className="panel-head">
+          <h2 id="overview-heading">Sync overview</h2>
+          <p className="panel-sub">Live counters from the management API</p>
+        </div>
         <QueryState
           isLoading={overviewQuery.isLoading}
           isError={overviewQuery.isError}
@@ -146,13 +154,13 @@ export function App() {
             </div>
           </div>
           {latest ? (
-            <p className="muted" style={{ marginTop: "0.75rem" }}>
+            <p className="overview-note">
               Last run <code>{latest.id.slice(0, 8)}</code> on {latest.sourceName}: inserted{" "}
-              {latest.insertedCount}, updated {latest.updatedCount}, unchanged {latest.unchangedCount},
-              rejected {latest.rejectedCount}.
+              {latest.insertedCount}, updated {latest.updatedCount}, unchanged{" "}
+              {latest.unchangedCount}, rejected {latest.rejectedCount}.
             </p>
           ) : (
-            <p className="muted" style={{ marginTop: "0.75rem" }}>
+            <p className="overview-note muted">
               No sync runs yet. Choose a source and run a sync.
             </p>
           )}
@@ -161,7 +169,10 @@ export function App() {
 
       <div className="grid-2">
         <section className="panel" aria-labelledby="run-heading">
-          <h2 id="run-heading">Run sync</h2>
+          <div className="panel-head">
+            <h2 id="run-heading">Run sync</h2>
+            <p className="panel-sub">Start a full import from a registered source</p>
+          </div>
           <div className="toolbar">
             <div className="field">
               <label htmlFor="source">Source</label>
@@ -213,7 +224,7 @@ export function App() {
             </div>
           ) : null}
           {runSyncMutation.isSuccess ? (
-            <p className="muted" role="status">
+            <p className="success-box" role="status">
               Sync finished with status <strong>{runSyncMutation.data.data.status}</strong> (
               inserted {runSyncMutation.data.data.insertedCount}).
             </p>
@@ -221,7 +232,10 @@ export function App() {
         </section>
 
         <section className="panel" aria-labelledby="history-heading">
-          <h2 id="history-heading">Sync history</h2>
+          <div className="panel-head">
+            <h2 id="history-heading">Sync history</h2>
+            <p className="panel-sub">Select a run to inspect failures</p>
+          </div>
           <QueryState
             isLoading={syncsQuery.isLoading}
             isError={syncsQuery.isError}
@@ -242,11 +256,14 @@ export function App() {
                 </thead>
                 <tbody>
                   {syncRows.map((run) => (
-                    <tr key={run.id}>
+                    <tr
+                      key={run.id}
+                      className={selectedSyncId === run.id ? "is-selected" : undefined}
+                    >
                       <td>
                         <button
                           type="button"
-                          className="btn btn-secondary"
+                          className="btn-linkish"
                           onClick={() => setSelectedSyncId(run.id)}
                         >
                           {formatTime(run.finishedAt ?? run.createdAt)}
@@ -256,7 +273,7 @@ export function App() {
                       <td>
                         <StatusBadge status={run.status} />
                       </td>
-                      <td>
+                      <td className="counts">
                         +{run.insertedCount} / ~{run.updatedCount} / ={run.unchangedCount} / !
                         {run.rejectedCount}
                       </td>
@@ -270,7 +287,10 @@ export function App() {
       </div>
 
       <section className="panel" aria-labelledby="detail-heading">
-        <h2 id="detail-heading">Failed-record details</h2>
+        <div className="panel-head">
+          <h2 id="detail-heading">Failed-record details</h2>
+          <p className="panel-sub">Rejection reasons for the selected run</p>
+        </div>
         {!selectedSyncId ? (
           <p className="muted">Select a sync run to inspect rejected records and failure reasons.</p>
         ) : (
@@ -282,10 +302,12 @@ export function App() {
           >
             {detail ? (
               <div className="stack">
-                <p>
-                  <StatusBadge status={detail.status} /> {detail.sourceName} · retries{" "}
-                  {detail.retryCount}
-                </p>
+                <div className="meta-row">
+                  <StatusBadge status={detail.status} />
+                  <span>
+                    {detail.sourceName} · retries {detail.retryCount}
+                  </span>
+                </div>
                 {detail.failureReason ? (
                   <div className="error-box" role="alert">
                     {detail.failureCategory}: {detail.failureReason}
@@ -309,7 +331,10 @@ export function App() {
       </section>
 
       <section className="panel" aria-labelledby="locations-heading">
-        <h2 id="locations-heading">Locations</h2>
+        <div className="panel-head">
+          <h2 id="locations-heading">Locations</h2>
+          <p className="panel-sub">Canonical synchronized records</p>
+        </div>
         <form
           className="toolbar"
           onSubmit={(event) => {
@@ -377,7 +402,9 @@ export function App() {
               </tbody>
             </table>
           </div>
-          <p className="muted">Total matching: {locationsQuery.data?.total ?? 0}</p>
+          <p className="footer-meta muted">
+            Total matching: {locationsQuery.data?.total ?? 0}
+          </p>
         </QueryState>
       </section>
     </div>

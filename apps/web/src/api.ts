@@ -87,18 +87,46 @@ export type Overview = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
-    ...init,
-  });
-  const body = await response.json().catch(() => ({}));
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
+      ...init,
+    });
+  } catch {
+    throw new Error(
+      "Cannot reach the API. Start it with `npm run dev:api` (Postgres must be up on DATABASE_URL).",
+    );
+  }
+
+  const raw = await response.text();
+  let body: unknown = {};
+  if (raw) {
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      body = { message: raw.slice(0, 200) };
+    }
+  }
+
   if (!response.ok) {
+    const proxyDown =
+      response.status >= 500 &&
+      (raw.includes("ECONNREFUSED") ||
+        raw.includes("http proxy error") ||
+        raw.trim().length === 0);
+    if (proxyDown) {
+      throw new Error(
+        "API is not running on :3001. In another terminal run `npm run db:up`, then `npm run dev:api`.",
+      );
+    }
     const message =
       typeof body === "object" && body && "message" in body
         ? String((body as { message: string }).message)
         : `Request failed (${response.status})`;
     throw new Error(message);
   }
+
   return body as T;
 }
 
