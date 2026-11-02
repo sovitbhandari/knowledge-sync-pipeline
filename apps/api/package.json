@@ -13,10 +13,13 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "sync:mock": "tsx src/scripts/seed-and-sync.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
+    "@ksp/shared": "*",
+    "csv-parse": "^5.6.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.3",
     "fastify": "^5.2.0",

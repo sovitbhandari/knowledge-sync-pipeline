@@ -11,7 +11,7 @@ enterprise integration problems for portfolio demonstration.
 | Area | Status |
 | --- | --- |
 | Repository foundation (Phase 1) | Complete |
-| ETL adapters / normalization (Phase 2) | Not started |
+| ETL adapters / normalization (Phase 2) | Complete |
 | Retries, leases, checkpoints (Phase 3) | Not started |
 | Management API + React dashboard (Phase 4) | Not started |
 | Full verification / benchmarks (Phase 5) | Not started |
@@ -19,22 +19,24 @@ enterprise integration problems for portfolio demonstration.
 ### Implemented
 
 - npm workspaces monorepo (`apps/api`, `packages/shared`)
-- TypeScript, ESLint, Prettier
-- Docker Compose PostgreSQL 16
-- Drizzle ORM schema + SQL migrations for core tables
-- Fastify API with `/health/live` and `/health/ready`
-- Environment validation via Zod
-- Unit/integration smoke tests for config and health probes
+- TypeScript, ESLint, Prettier, Docker Compose PostgreSQL 16
+- Drizzle schema/migrations for core sync tables
+- Fastify API with `/health/*` and embedded `/mock-source` REST fixtures
+- Canonical Zod validation + normalization (`@ksp/shared`)
+- Mock REST + CSV adapters sharing the same validation pipeline
+- Idempotent location upserts with content hashes and rejection audit rows
+- Sync runner with per-page transactions and checkpoint/event records
 
 ### Verified (executed locally)
 
-- `npm install`
-- `docker compose up -d postgres` (Postgres 16 healthy on host port from `.env`)
-- `npm run db:migrate` — created `data_sources`, `locations`, `source_records`, `sync_runs`, `sync_checkpoints`, `rejected_records`, `sync_events`
-- `npm run typecheck`, `npm run lint`, `npm run test` (4 tests passed)
-- `npm run build` for `@ksp/api` and `@ksp/shared`
-- `GET /health/live` → `200 { status: "ok" }`
-- `GET /health/ready` → `200 { status: "ready", database: "ok" }`
+- Phase 1 health/migrate/typecheck/lint checks
+- `@ksp/shared` normalize unit tests (3)
+- API tests (9): health, config, and sync integration cases:
+  1. first import inserts all valid records
+  2. repeated import creates no duplicates
+  3. changed source record updates only that canonical row
+  4. malformed records rejected with auditable reason
+  11. CSV and REST produce equivalent content hashes
 
 ### Experimental / not claimed
 
@@ -43,25 +45,15 @@ enterprise integration problems for portfolio demonstration.
 
 ### Known limitations
 
-- No ingestion, sync worker, or dashboard yet
+- No bounded retry/429 handling, leases, or resumable interruption recovery yet (Phase 3)
+- No public management API or React dashboard yet (Phase 4)
 - No automated retention purger
-- Shared package is a workspace stub until Phase 2 schemas land
 - If host port 5432 is occupied, set `POSTGRES_PORT` / `DATABASE_URL` (this machine uses `5433` in `.env`)
 
-## Stack
-
-- Backend: Node.js, TypeScript, Fastify, Pino
-- Database: PostgreSQL 16, Drizzle ORM
-- Validation: Zod
-- Frontend (later): React, Vite, TanStack Query
-- Tests: Vitest (Playwright later)
-- Infra: Docker Compose (GitHub Actions later)
-
-## Quick start (Phase 1)
+## Quick start
 
 ```bash
 cp .env.example .env
-# Start Docker Desktop if needed, then:
 npm install
 npm run db:up
 docker compose ps   # wait until healthy
@@ -71,22 +63,29 @@ npm run test
 npm run dev:api
 ```
 
-Health checks:
+In another shell, with the API running (mock source mounted):
+
+```bash
+npm run sync:mock -w @ksp/api -- 25
+```
+
+Health:
 
 ```bash
 curl -s http://localhost:3001/health/live
 curl -s http://localhost:3001/health/ready
+curl -s 'http://localhost:3001/mock-source/locations?limit=2'
 ```
 
 ## Workspace layout
 
 ```
-apps/api          Fastify API, Drizzle schema, migrations, (future) sync worker
-packages/shared   Shared Zod schemas / types (expanded in Phase 2)
-docs/             Architecture and design notes
+apps/api          Fastify API, adapters, sync runner, migrations
+packages/shared   Canonical Zod schemas + normalization
+docs/             Architecture and data-flow notes
 ```
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) — components, table ownership, retention
-- API docs, failure/recovery design, and benchmarks arrive in later phases
+- [Architecture](docs/architecture.md)
+- [Data flow](docs/data-flow.md)

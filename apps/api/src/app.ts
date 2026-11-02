@@ -1,6 +1,8 @@
 import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import type pg from "pg";
+import { registerMockSource } from "./adapters/mock-rest/plugin.js";
+import type { MockLocationStore } from "./adapters/mock-rest/store.js";
 import type { AppConfig } from "./config.js";
 import { checkDatabaseReady, type Database } from "./db/client.js";
 
@@ -8,6 +10,7 @@ export type AppDeps = {
   config: AppConfig;
   db: Database;
   pool: pg.Pool;
+  mockStore?: MockLocationStore;
 };
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
@@ -22,6 +25,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await app.register(cors, { origin: true });
+  await registerMockSource(app, { store: deps.mockStore });
 
   app.get("/health/live", async () => ({
     status: "ok",
