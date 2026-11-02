@@ -4,7 +4,7 @@ import { type MockLocationStore, defaultMockStore } from "./store.js";
 
 const querySchema = z.object({
   cursor: z.string().optional(),
-  limit: z.coerce.number().int().positive().max(100).optional(),
+  limit: z.coerce.number().int().positive().max(500).optional(),
 });
 
 export type MockSourcePluginOpts = {

@@ -14,7 +14,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "sync:mock": "tsx src/scripts/seed-and-sync.ts"
+    "sync:mock": "tsx src/scripts/seed-and-sync.ts",
+    "bench": "tsx src/scripts/benchmark.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

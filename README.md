@@ -14,39 +14,45 @@ enterprise integration problems for portfolio demonstration.
 | ETL adapters / normalization (Phase 2) | Complete |
 | Retries, leases, checkpoints (Phase 3) | Complete |
 | Management API + React dashboard (Phase 4) | Complete |
-| Full verification / benchmarks (Phase 5) | In progress |
+| Full verification / benchmarks (Phase 5) | Complete |
 
-### Implemented
+### Implemented features
 
-- npm workspaces monorepo (`apps/api`, `apps/web`, `packages/shared`)
-- TypeScript, ESLint, Prettier, Docker Compose PostgreSQL 16
-- Drizzle schema/migrations for core sync tables
-- Fastify management API + embedded `/mock-source` fixtures
-- Canonical Zod validation + normalization (`@ksp/shared`)
-- Mock REST + CSV adapters sharing the same validation pipeline
-- Idempotent location upserts with content hashes and rejection audit rows
-- Bounded retries with jitter, HTTP 429 `Retry-After` support
-- Database-backed source leases with expired-lease recovery
-- Checkpoint resume after interruption; terminal failed-job states
-- React admin dashboard (TanStack Query) against live API responses
-- Playwright coverage for persisted sync results in the UI
+- npm workspaces: `@ksp/api`, `@ksp/web`, `@ksp/shared`
+- Fastify + Drizzle + PostgreSQL ETL/sync service
+- Mock REST + CSV adapters, Zod canonicalization, idempotent upserts
+- Retries, leases, checkpoints, terminal failure states
+- Management REST API and React admin dashboard
+- Vitest integration tests, Playwright UI coverage, GitHub Actions CI
+- Repeatable local benchmarks with recorded measurements
 
-### Verified (executed locally)
+### Verified behaviors
 
-- `typecheck`, `lint`, API/shared Vitest suites (22 tests)
-- Playwright: dashboard displays persisted sync results after Run Sync
-- Required behavioral cases 1–11 covered by automated tests
+Executed locally on this machine:
 
-### Experimental / not claimed
+- `npm run typecheck`, `npm run lint`, `npm run test` (22 automated tests)
+- `npm run test:e2e -w @ksp/web` (dashboard shows persisted sync results)
+- Required cases 1–11 covered
+- Migrations apply against Docker Compose Postgres 16
 
-- Performance benchmarks land in Phase 5
-- No production scalability claims
+### Experimental benchmarks
+
+See [docs/benchmarks.md](docs/benchmarks.md). Example local cold-import throughput on
+Apple M5 Pro / Postgres 16 / page size 200:
+
+- 1,000 records ≈ 1,271 records/s
+- 10,000 records ≈ 1,501 records/s
+- 50,000 records ≈ 1,512 records/s
+
+These numbers are not production performance or scalability claims.
 
 ### Known limitations
 
-- Sync `POST /api/syncs` currently awaits completion (suitable for demo-scale datasets)
-- No automated retention purger
-- If host port 5432 is occupied, set `POSTGRES_PORT` / `DATABASE_URL` (this machine uses `5433` in `.env`)
+- `POST /api/syncs` awaits completion (fine for demo-scale imports)
+- Management API/dashboard have no authentication
+- Retention purge jobs are documented but not automated
+- Optional commercial listing destination adapters are intentionally absent
+- If host port 5432 is busy, set `POSTGRES_PORT` / `DATABASE_URL` (local `.env` uses `5433`)
 
 ## Quick start
 
@@ -54,14 +60,14 @@ enterprise integration problems for portfolio demonstration.
 cp .env.example .env
 npm install
 npm run db:up
-docker compose ps   # wait until healthy
+docker compose ps
 npm run db:migrate
 npm run typecheck
 npm run test
 npm run dev:api
 ```
 
-In another shell:
+Another terminal:
 
 ```bash
 npm run dev:web
@@ -69,25 +75,9 @@ npm run dev:web
 
 Open `http://127.0.0.1:5173`.
 
-Optional CLI sync (API must be running):
-
 ```bash
-npm run sync:mock -w @ksp/api -- 25
-```
-
-E2E:
-
-```bash
-npm run test:e2e -w @ksp/web
-```
-
-## Workspace layout
-
-```
-apps/api          Fastify API, adapters, sync runner, migrations
-apps/web          React admin dashboard + Playwright e2e
-packages/shared   Canonical Zod schemas + normalization
-docs/             Architecture, API, data-flow, failure/recovery
+npm run test:e2e
+npm run bench -- 1000,10000,50000 200
 ```
 
 ## Documentation
@@ -96,3 +86,5 @@ docs/             Architecture, API, data-flow, failure/recovery
 - [Data flow](docs/data-flow.md)
 - [Failure and recovery](docs/failure-recovery.md)
 - [API](docs/api.md)
+- [Security notes](docs/security.md)
+- [Benchmarks](docs/benchmarks.md)

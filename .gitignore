@@ -28,9 +28,8 @@ test-results/
 *.swp
 *.swo
 
-# Benchmarks (generated)
-benchmarks/results/*.json
-!benchmarks/results/.gitkeep
+# Benchmarks keep committed measured summaries; ignore ad-hoc local dumps if desired
+# benchmarks/results/*.json
 
 # Misc
 tmp/

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ksp
+          POSTGRES_PASSWORD: ksp_dev_password
+          POSTGRES_DB: knowledge_sync
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ksp -d knowledge_sync"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://ksp:ksp_dev_password@localhost:5432/knowledge_sync
+      API_HOST: 127.0.0.1
+      API_PORT: 3001
+      NODE_ENV: test
+      LOG_LEVEL: error
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Migrate database
+        run: npm run db:migrate
+
+      - name: Unit and integration tests
+        run: npm run test
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright e2e
+        run: npm run test:e2e -w @ksp/web

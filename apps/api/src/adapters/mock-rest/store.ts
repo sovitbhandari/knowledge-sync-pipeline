@@ -106,7 +106,7 @@ export class MockLocationStore {
     if (!Number.isFinite(start) || start < 0) {
       throw new Error(`Invalid cursor '${cursor}'`);
     }
-    const pageSize = Math.min(Math.max(limit, 1), 100);
+    const pageSize = Math.min(Math.max(limit, 1), 500);
     const slice = this.records.slice(start, start + pageSize);
     const nextStart = start + slice.length;
     const nextCursor = nextStart < this.records.length ? String(nextStart) : null;
